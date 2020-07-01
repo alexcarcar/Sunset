@@ -14,6 +14,7 @@ class MainActivity : AppCompatActivity() {
     private lateinit var sceneView: View
     private lateinit var sunView: View
     private lateinit var skyView: View
+    private var sunsetReverse = false
 
     private val blueSkyColor: Int by lazy {
         ContextCompat.getColor(this, R.color.blue_sky)
@@ -34,26 +35,31 @@ class MainActivity : AppCompatActivity() {
         skyView = findViewById(R.id.sky)
 
         sceneView.setOnClickListener {
-            startAnimation()
+            startAnimation(sunsetReverse)
+            sunsetReverse = !sunsetReverse
         }
     }
 
-    private fun startAnimation() {
-        val sunYStart = sunView.top.toFloat()
-        val sunYEnd = skyView.height.toFloat()
-
+    private fun startAnimation(reverse: Boolean) {
+        var sunYStart = sunView.top.toFloat()
+        var sunYEnd = skyView.height.toFloat()
+        if (reverse) sunYStart = sunYEnd.also { sunYEnd = sunYStart }
         val heightAnimator = ObjectAnimator
             .ofFloat(sunView, "y", sunYStart, sunYEnd)
             .setDuration(3000)
         heightAnimator.interpolator = AccelerateInterpolator()
 
+        val skyStartColor = if (reverse) sunsetSkyColor else blueSkyColor
+        val skyEndColor = if (reverse) blueSkyColor else sunsetSkyColor
         val sunsetSkyAnimator = ObjectAnimator
-            .ofInt(skyView, "backgroundColor", blueSkyColor, sunsetSkyColor)
+            .ofInt(skyView, "backgroundColor", skyStartColor, skyEndColor)
             .setDuration(3000)
         sunsetSkyAnimator.setEvaluator(ArgbEvaluator())
 
+        val nightStartColor = if (reverse) nightSkyColor else sunsetSkyColor
+        val nightEndColor = if (reverse) sunsetSkyColor else nightSkyColor
         val nightSkyAnimator = ObjectAnimator
-            .ofInt(nightSkyColor, "backgroundColor", sunsetSkyColor, nightSkyColor)
+            .ofInt(nightSkyColor, "backgroundColor", nightStartColor, nightEndColor)
             .setDuration(1500)
         nightSkyAnimator.setEvaluator(ArgbEvaluator())
 
