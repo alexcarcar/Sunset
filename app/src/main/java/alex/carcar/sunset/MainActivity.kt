@@ -3,12 +3,15 @@ package alex.carcar.sunset
 import android.animation.AnimatorSet
 import android.animation.ArgbEvaluator
 import android.animation.ObjectAnimator
+import android.animation.PropertyValuesHolder
 import android.os.Bundle
 import android.view.View
+import android.view.animation.AccelerateDecelerateInterpolator
 import android.view.animation.AccelerateInterpolator
 import android.widget.Toast
 import androidx.appcompat.app.AppCompatActivity
 import androidx.core.content.ContextCompat
+
 
 private const val DURATION: Long = 3000
 
@@ -18,7 +21,6 @@ class MainActivity : AppCompatActivity() {
     private lateinit var sunView: View
     private lateinit var skyView: View
     private var goingUp = false
-    private lateinit var animatorSet: AnimatorSet
 
     private val blueSkyColor: Int by lazy {
         ContextCompat.getColor(this, R.color.blue_sky)
@@ -37,11 +39,35 @@ class MainActivity : AppCompatActivity() {
         sceneView = findViewById(R.id.scene)
         sunView = findViewById(R.id.sun)
         skyView = findViewById(R.id.sky)
+        animateSunPulse()
 
         sceneView.setOnClickListener {
             sunAnimation(goingUp)
             goingUp = !goingUp
         }
+    }
+
+    private fun animateSunPulse() {
+        val pulseAnimator = ObjectAnimator
+            .ofFloat(sunView, "alpha", 0.5f, 1f)
+            .setDuration(DURATION/20)
+        pulseAnimator.interpolator = AccelerateInterpolator()
+        pulseAnimator.repeatCount = ObjectAnimator.INFINITE
+        pulseAnimator.repeatMode = ObjectAnimator.REVERSE
+
+        val heatAnimator = ObjectAnimator.ofPropertyValuesHolder(
+            sunView,
+            PropertyValuesHolder.ofFloat("scaleX", 1.3f)
+            , PropertyValuesHolder.ofFloat("scaleY", 1.3f)
+        ).setDuration(600)
+        heatAnimator.repeatCount = ObjectAnimator.INFINITE
+        heatAnimator.repeatMode = ObjectAnimator.REVERSE
+        heatAnimator.interpolator = AccelerateDecelerateInterpolator()
+
+        val animatorSet = AnimatorSet()
+        animatorSet.play(pulseAnimator)
+            .with(heatAnimator)
+        animatorSet.start()
     }
 
     /***
@@ -75,7 +101,7 @@ class MainActivity : AppCompatActivity() {
             .setDuration(duration / 2)
         nightSkyAnimator.setEvaluator(ArgbEvaluator())
 
-        animatorSet = AnimatorSet()
+        val animatorSet = AnimatorSet()
         animatorSet.play(heightAnimator)
             .with(sunsetSkyAnimator)
             .before(nightSkyAnimator)
