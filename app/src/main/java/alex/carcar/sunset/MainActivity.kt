@@ -6,15 +6,19 @@ import android.animation.ObjectAnimator
 import android.os.Bundle
 import android.view.View
 import android.view.animation.AccelerateInterpolator
+import android.widget.Toast
 import androidx.appcompat.app.AppCompatActivity
 import androidx.core.content.ContextCompat
+
+private const val DURATION: Long = 3000
 
 class MainActivity : AppCompatActivity() {
 
     private lateinit var sceneView: View
     private lateinit var sunView: View
     private lateinit var skyView: View
-    private var sunsetReverse = false
+    private var goingUp = false
+    private lateinit var animatorSet: AnimatorSet
 
     private val blueSkyColor: Int by lazy {
         ContextCompat.getColor(this, R.color.blue_sky)
@@ -35,35 +39,43 @@ class MainActivity : AppCompatActivity() {
         skyView = findViewById(R.id.sky)
 
         sceneView.setOnClickListener {
-            startAnimation(sunsetReverse)
-            sunsetReverse = !sunsetReverse
+            sunAnimation(goingUp)
+            goingUp = !goingUp
         }
     }
 
-    private fun startAnimation(reverse: Boolean) {
-        var sunYStart = sunView.top.toFloat()
-        var sunYEnd = skyView.height.toFloat()
-        if (reverse) sunYStart = sunYEnd.also { sunYEnd = sunYStart }
+    /***
+     * @param goingUp: determines if the sun is going up (sunrise) or going down (sunset)
+     */
+    private fun sunAnimation(goingUp: Boolean) {
+        val y0 = sunView.top.toFloat()                  // Sun's beginning position
+        val ys = sunView.y                              // Sun's current position
+        val y1 = skyView.height.toFloat()               // Sun's final position
+        val ds = y1 - y0                                // Total distance the Sun moves
+        val dr = if (goingUp) ys - y0 else y1 - ys      // Distance remaining on the sunrise/sunset
+        val duration = (DURATION * dr / ds).toLong()    // Duration of time left based on
+        // ======================================================================================
+        Toast.makeText(applicationContext, "duration = $duration", Toast.LENGTH_LONG).show()
         val heightAnimator = ObjectAnimator
-            .ofFloat(sunView, "y", sunYStart, sunYEnd)
-            .setDuration(3000)
+            .ofFloat(sunView, "y", ys, if (goingUp) y0 else y1)
+            .setDuration(duration)
         heightAnimator.interpolator = AccelerateInterpolator()
 
-        val skyStartColor = if (reverse) sunsetSkyColor else blueSkyColor
-        val skyEndColor = if (reverse) blueSkyColor else sunsetSkyColor
+        val skyStartColor = if (goingUp) sunsetSkyColor else blueSkyColor
+        val skyEndColor = if (goingUp) blueSkyColor else sunsetSkyColor
         val sunsetSkyAnimator = ObjectAnimator
             .ofInt(skyView, "backgroundColor", skyStartColor, skyEndColor)
-            .setDuration(3000)
+            .setDuration(duration)
         sunsetSkyAnimator.setEvaluator(ArgbEvaluator())
 
-        val nightStartColor = if (reverse) nightSkyColor else sunsetSkyColor
-        val nightEndColor = if (reverse) sunsetSkyColor else nightSkyColor
+        val nightStartColor = if (goingUp) nightSkyColor else sunsetSkyColor
+        val nightEndColor = if (goingUp) sunsetSkyColor else nightSkyColor
         val nightSkyAnimator = ObjectAnimator
             .ofInt(nightSkyColor, "backgroundColor", nightStartColor, nightEndColor)
-            .setDuration(1500)
+            .setDuration(duration / 2)
         nightSkyAnimator.setEvaluator(ArgbEvaluator())
 
-        val animatorSet = AnimatorSet()
+        animatorSet = AnimatorSet()
         animatorSet.play(heightAnimator)
             .with(sunsetSkyAnimator)
             .before(nightSkyAnimator)
