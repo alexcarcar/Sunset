@@ -10,12 +10,15 @@ import android.widget.Toast
 import androidx.appcompat.app.AppCompatActivity
 import androidx.core.content.ContextCompat
 
+
 private const val DURATION: Long = 3000
 
 class MainActivity : AppCompatActivity() {
 
     private lateinit var sceneView: View
     private lateinit var sunView: View
+    private lateinit var sunReflection: View
+    private lateinit var seaView: View
     private lateinit var skyView: View
     private var goingUp = false
     private lateinit var animatorSet: AnimatorSet
@@ -37,6 +40,8 @@ class MainActivity : AppCompatActivity() {
         sceneView = findViewById(R.id.scene)
         sunView = findViewById(R.id.sun)
         skyView = findViewById(R.id.sky)
+        sunReflection = findViewById(R.id.sunReflection)
+        seaView = findViewById(R.id.sea)
 
         sceneView.setOnClickListener {
             sunAnimation(goingUp)
@@ -55,12 +60,20 @@ class MainActivity : AppCompatActivity() {
         val dr = if (goingUp) ys - y0 else y1 - ys      // Distance remaining on the sunrise/sunset
         val duration = (DURATION * dr / ds).toLong()    // Duration of time left based on
         // ======================================================================================
-        Toast.makeText(applicationContext, "duration = $duration", Toast.LENGTH_LONG).show()
         val heightAnimator = ObjectAnimator
             .ofFloat(sunView, "y", ys, if (goingUp) y0 else y1)
             .setDuration(duration)
         heightAnimator.interpolator = AccelerateInterpolator()
 
+        // ======================================================================================
+        val r0 = -sunReflection.height.toFloat()     // Shadow's ending position
+        val ry = sunReflection.y                     // Sun shadow's current position
+        val r1 = sunReflection.top.toFloat()         // Shadow's beginning position
+        val reflectionAnimator = ObjectAnimator
+            .ofFloat(sunReflection, "y", ry, if (goingUp) r1 else r0)
+            .setDuration(duration)
+        reflectionAnimator.interpolator = AccelerateInterpolator()
+        // ======================================================================================
         val skyStartColor = if (goingUp) sunsetSkyColor else blueSkyColor
         val skyEndColor = if (goingUp) blueSkyColor else sunsetSkyColor
         val sunsetSkyAnimator = ObjectAnimator
@@ -77,6 +90,7 @@ class MainActivity : AppCompatActivity() {
 
         animatorSet = AnimatorSet()
         animatorSet.play(heightAnimator)
+            .with(reflectionAnimator)
             .with(sunsetSkyAnimator)
             .before(nightSkyAnimator)
         animatorSet.start()

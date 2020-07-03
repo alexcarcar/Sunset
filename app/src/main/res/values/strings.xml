@@ -1,4 +1,5 @@
 <resources>
     <string name="app_name">Sunset</string>
     <string name="sun">Sun</string>
+    <string name="sun_reflection">sun reflection</string>
 </resources>
